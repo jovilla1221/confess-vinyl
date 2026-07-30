@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vinyl Confessions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..800;1,9..40,300..800&family=DM+Serif+Display:ital@0;1&family=Caveat:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --card: #1a1a1a;
+    --card-hover: #222;
+    --text: #f5f5f5;
+    --muted: #a0a0a0;
+    --dim: #666;
+    --accent: #e8b4b8;
+    --accent-soft: #f2d5d8;
+    --gold: #d4af7a;
+    --vinyl: #111;
+    --groove: #1c1c1c;
+    --label: #2a1a1a;
+    --shadow: rgba(0,0,0,0.55) 0 12px 40px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(232,180,184,0.12), transparent 55%),
+      radial-gradient(ellipse 60% 40% at 100% 100%, rgba(212,175,122,0.06), transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 20px 100px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  header .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2.4px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  header h1 {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-weight: 400;
+    font-style: italic;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  header p {
+    color: var(--muted);
+    font-size: 15px;
+    max-width: 420px;
+    margin: 0 auto;
+    line-height: 1.55;
+  }
+
+  /* Album grid */
+  .albums {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 18px;
+    margin-bottom: 56px;
+  }
+  @media (min-width: 640px) {
+    .albums { grid-template-columns: repeat(4, 1fr); gap: 22px; }
+  }
+
+  .album {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 12px;
+    cursor: pointer;
+    transition: transform .25s ease, background .2s, box-shadow .25s;
+    border: 1px solid transparent;
+    text-align: left;
+    width: 100%;
+    color: inherit;
+    font: inherit;
+  }
+  .album:hover, .album:focus-visible {
+    transform: translateY(-4px);
+    background: var(--card-hover);
+    box-shadow: var(--shadow);
+    border-color: rgba(232,180,184,0.25);
+    outline: none;
+  }
+  .album.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), var(--shadow);
+  }
+  .album-art {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    width: 100%;
+    display: grid;
+    place-items: center;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .album-art::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(145deg, rgba(255,255,255,0.12), transparent 45%);
+    pointer-events: none;
+  }
+  .album-art span {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-style: italic;
+    font-size: clamp(1.4rem, 3vw, 1.8rem);
+    opacity: 0.9;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  }
+  .album-meta .title {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .album-meta .artist {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .album-meta .hint {
+    font-size: 10px;
+    color: var(--dim);
+    margin-top: 6px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  /* Player / vinyl stage */
+  .stage {
+    display: none;
+    animation: fadeUp .5s ease;
+  }
+  .stage.show { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .stage-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .stage-head h2 {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(1.4rem, 3vw, 1.85rem);
+  }
+  .stage-head .sub {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 4px;
+  }
+  .back-btn {
+    background: transparent;
+    border: 1px solid #3a3a3a;
+    color: var(--text);
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color .2s, color .2s, background .2s;
+  }
+  .back-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent-soft);
+    background: rgba(232,180,184,0.08);
+  }
+
+  .vinyl-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 36px;
+  }
+
+  .turntable {
+    position: relative;
+    width: min(320px, 78vw);
+    height: min(320px, 78vw);
+  }
+
+  .platter {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 50% 50%,
+        #2b1a1a 0 18%,
+        #111 18.5% 19%,
+        #161616 19.5% 22%,
+        #0e0e0e 22.5% 24%,
+        #161616 24.5% 28%,
+        #0e0e0e 28.5% 30%,
+        #161616 30.5% 35%,
+        #0e0e0e 35.5% 37%,
+        #161616 37.5% 42%,
+        #0e0e0e 42.5% 44%,
+        #161616 44.5% 50%,
+        #0e0e0e 50.5% 52%,
+        #161616 52.5% 58%,
+        #0e0e0e 58.5% 60%,
+        #161616 60.5% 68%,
+        #0e0e0e 68.5% 70%,
+        #161616 70.5% 78%,
+        #0e0e0e 78.5% 80%,
+        #161616 80.5% 90%,
+        #0a0a0a 90.5% 100%);
+    box-shadow:
+      0 0 0 6px #1a1a1a,
+      0 0 0 8px #2a2a2a,
+      0 20px 50px rgba(0,0,0,0.65),
+      inset 0 0 30px rgba(0,0,0,0.5);
+  }
+  .platter.spinning {
+    animation: spin 3.2s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 38%;
+    height: 38%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 10px;
+    box-shadow: inset 0 0 12px rgba(0,0,0,0.35), 0 0 0 3px rgba(0,0,0,0.4);
+  }
+  .label .emoji {
+    font-size: 1.4rem;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .label .name {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    line-height: 1.25;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+  .spindle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: #888;
+    box-shadow: 0 0 0 2px #333, inset 0 1px 2px rgba(255,255,255,0.4);
+    z-index: 2;
+  }
+
+  .tonearm {
+    position: absolute;
+    top: 8%;
+    right: -6%;
+    width: 42%;
+    height: 8px;
+    transform-origin: 90% 50%;
+    transform: rotate(-28deg);
+    transition: transform .8s cubic-bezier(.4,0,.2,1);
+    z-index: 3;
+    pointer-events: none;
+  }
+  .tonearm.on {
+    transform: rotate(12deg);
+  }
+  .tonearm::before {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    width: 22px;
+    height: 22px;
+    transform: translateY(-50%);
+    border-radius: 50%;
+    background: linear-gradient(145deg, #555, #2a2a2a);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+  .tonearm::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 18px;
+    top: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, #3a3a3a, #666);
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  }
+  .headshell {
+    position: absolute;
+    left: -6px;
+    top: 50%;
+    width: 18px;
+    height: 14px;
+    transform: translateY(-50%);
+    background: #222;
+    border-radius: 2px 4px 4px 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .ctrl {
+    background: #1f1f1f;
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 22px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background .2s, transform .15s;
+  }
+  .ctrl:hover { background: #2a2a2a; }
+  .ctrl:active { transform: scale(0.97); }
+  .ctrl.primary {
+    background: var(--accent);
+    color: #1a0f10;
+  }
+  .ctrl.primary:hover { background: var(--accent-soft); }
+
+  /* Letter */
+  .letter-wrap {
+    width: min(560px, 100%);
+    margin-top: 8px;
+  }
+  .letter {
+    background: linear-gradient(165deg, #faf6f0 0%, #f3ebe1 100%);
+    color: #3a2b2b;
+    border-radius: 4px 14px 14px 4px;
+    padding: 36px 32px 40px;
+    box-shadow:
+      var(--shadow),
+      inset 0 0 0 1px rgba(255,255,255,0.5);
+    position: relative;
+    min-height: 280px;
+  }
+  .letter::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: linear-gradient(180deg, var(--accent), var(--gold));
+    border-radius: 4px 0 0 4px;
+  }
+  .letter .stamp {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 52px;
+    height: 52px;
+    border: 2px dashed rgba(58,43,43,0.25);
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    transform: rotate(8deg);
+    opacity: 0.85;
+  }
+  .letter .from-line {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: #9a7a7a;
+    margin-bottom: 18px;
+  }
+  .letter .greeting {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-style: italic;
+    font-size: 1.45rem;
+    margin-bottom: 16px;
+    color: #2c1e1e;
+  }
+  .letter .body {
+    font-size: 15.5px;
+    line-height: 1.75;
+    white-space: pre-wrap;
+    min-height: 120px;
+  }
+  .letter .body .cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: #3a2b2b;
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: blink 1s steps(1) infinite;
+  }
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+  .letter .sign {
+    margin-top: 28px;
+    font-family: 'Caveat', cursive;
+    font-size: 1.65rem;
+    color: #5a3a3a;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity .5s ease, transform .5s ease;
+  }
+  .letter .sign.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .letter .ps {
+    margin-top: 14px;
+    font-size: 13px;
+    color: #7a5a5a;
+    font-style: italic;
+    opacity: 0;
+    transition: opacity .5s ease .15s;
+  }
+  .letter .ps.show { opacity: 1; }
+
+  .footer-note {
+    text-align: center;
+    margin-top: 64px;
+    color: var(--dim);
+    font-size: 12px;
+    letter-spacing: 0.4px;
+  }
+
+  /* grain */
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+</style>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+<div class="wrap">
+  <header>
+    <div class="tag">Side A · Confessions</div>
+    <h1>Vinyl Confessions</h1>
+    <p>Pilih album. Putar piringan. Baca surat yang sempat ditahan di groove-nya.</p>
+  </header>
+
+  <div id="gallery" class="albums" role="list"></div>
+
+  <section id="stage" class="stage" aria-live="polite">
+    <div class="stage-head">
+      <div>
+        <h2 id="stage-title">—</h2>
+        <div class="sub" id="stage-sub">—</div>
+      </div>
+      <button type="button" class="back-btn" id="btn-back">← Gallery</button>
+    </div>
+
+    <div class="vinyl-zone">
+      <div class="turntable" aria-hidden="true">
+        <div class="platter" id="platter">
+          <div class="label" id="vinyl-label">
+            <div class="emoji" id="vinyl-emoji">💿</div>
+            <div class="name" id="vinyl-name">CONFESS</div>
+          </div>
+        </div>
+        <div class="spindle"></div>
+        <div class="tonearm" id="tonearm"><div class="headshell"></div></div>
+      </div>
+
+      <div class="controls">
+        <button type="button" class="ctrl primary" id="btn-play">▶ Play Letter</button>
+        <button type="button" class="ctrl" id="btn-replay" hidden>↻ Replay</button>
+      </div>
+
+      <div class="letter-wrap">
+        <article class="letter" id="letter">
+          <div class="stamp" id="letter-stamp">💌</div>
+          <div class="from-line" id="letter-from">From the B-side</div>
+          <div class="greeting" id="letter-greeting">Hey,</div>
+          <div class="body" id="letter-body"><span class="cursor" id="cursor"></span></div>
+          <div class="sign" id="letter-sign">—</div>
+          <div class="ps" id="letter-ps"></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <p class="footer-note">klik album · piringan berputar · surat muncul di bawah</p>
+</div>
+
+<script>
+const CONFESSIONS = [
+  {
+    id: 'midnight',
+    title: 'Midnight Static',
+    artist: 'Side A',
+    emoji: '🌙',
+    colors: ['#1a1030', '#4a2c6a'],
+    stamp: '🌙',
+    from: 'Track 01 · Unsent',
+    greeting: 'Hey kamu,',
+    body: 'Aku nulis ini di jam yang biasanya cuma diisi scroll doang. Tapi malam ini kepalaku isinya kamu terus.\n\nBukan drama. Bukan tiba-tiba. Cuma jujur: tiap chat lo bikin hari gw agak lebih tenang. Kayak ada lagu yang pas diputar pas hujan.\n\nAku gak minta jawaban besar. Cuma mau bilang — aku suka kamu. Pelan-pelan, tapi beneran.',
+    sign: '— dari seseorang yang masih nahan tombol kirim',
+    ps: 'P.S. kalo ini awkward, anggap aja B-side yang kesasar.'
+  },
+  {
+    id: 'rainy',
+    title: 'Rainy Bus Home',
+    artist: 'Untitled Feelings',
+    emoji: '🌧️',
+    colors: ['#0f1f2e', '#2a5a7a'],
+    stamp: '☔',
+    from: 'Track 02 · Soft Launch',
+    greeting: 'Kamu,',
+    body: 'Gw gak jago ngomong langsung. Jadi ini surat di dalam piringan hitam — biar lo denger pelan-pelan.\n\nLo tau gak, tiap lo ketawa di chat, gw senyum sendiri di bus. Aneh, iya. Tapi jujur.\n\nAku gak nanya "kita apa". Aku cuma mau lo tau: kehadiran lo ngerubah volume hari-hari gw. Dari sepi jadi ada bass-nya.',
+    sign: '— penumpang yang selalu cek notif dulu',
+    ps: 'P.S. kalo mau, balas aja pakai stiker. Gw ngerti bahasa itu.'
+  },
+  {
+    id: 'slowburn',
+    title: 'Slow Burn',
+    artist: 'Almost',
+    emoji: '🔥',
+    colors: ['#2a1210', '#8a3a2a'],
+    stamp: '🔥',
+    from: 'Track 03 · Almost Love',
+    greeting: 'Hai,',
+    body: 'Ini bukan first sight. Ini slow burn — yang ngebakar dari candaan kecil, reply cepet, dan "hati-hati ya" yang kedengeran biasa tapi ngena.\n\nAku takut rusak yang udah nyaman. Makanya lama diam. Tapi diam juga bikin berat.\n\nJadi ini aku, nerima risiko: aku ngerasa lebih dari temen. Dan kalo lo juga ngerasa sedikit aja... bilang, ya. Pelan juga boleh.',
+    sign: '— yang lagi belajar berani',
+    ps: 'P.S. gak usah perfect. Jujur aja udah cukup.'
+  },
+  {
+    id: 'cassette',
+    title: 'Rewind Me',
+    artist: 'Old Frequency',
+    emoji: '📼',
+    colors: ['#1a1a12', '#5a4a20'],
+    stamp: '📼',
+    from: 'Track 04 · Rewind',
+    greeting: 'Teman favoritku,',
+    body: 'Kalo hidup bisa di-rewind kayak kaset, aku mau ulang beberapa chat kita. Bukan buat ubah, tapi buat ngerasain lagi detiknya.\n\nAku sadar belakangan: lo udah jadi lagu yang stuck di head. Bukan noise — full album.\n\nConfess-nya simpel: aku sayang sama cara kita. Dan aku pengen ada "kita" yang lebih jelas, kalo lo mau juga.',
+    sign: '— yang simpen chat lo di folder rahasia',
+    ps: 'P.S. press play kalo hati lo siap. Pause juga oke.'
+  },
+  {
+    id: 'golden',
+    title: 'Golden Hour Text',
+    artist: 'Unread',
+    emoji: '🌅',
+    colors: ['#2a1a08', '#c47a2a'],
+    stamp: '☀️',
+    from: 'Track 05 · Draft',
+    greeting: 'Kamu yang selalu on time,',
+    body: 'Gw nulis ini pas golden hour — cahaya bagus, hati agak berani.\n\nLo bikin hari biasa kerasa spesial tanpa usaha lebay. Cuma "udah makan?" aja udah bikin dada aneh.\n\nAku gak jago romantis. Tapi aku jago jujur: aku suka kamu. Mau coba lebih deket, kalo lo kasih izin.',
+    sign: '— yang ngetik-hapus-ngetik lagi',
+    ps: 'P.S. kalo di-read doang, ya... semoga lo senyum dikit.'
+  },
+  {
+    id: 'static',
+    title: 'Between Songs',
+    artist: 'Quiet Loud',
+    emoji: '🎧',
+    colors: ['#12181f', '#3a5a6a'],
+    stamp: '🎧',
+    from: 'Track 06 · Interlude',
+    greeting: 'Di jeda lagu,',
+    body: 'Ada jeda di antara lagu di mana semuanya sepi sebentar. Di situ biasanya aku mikirin kamu.\n\nBukan karena sepi. Karena kamu yang bikin sepi itu terasa nyaman.\n\nAku cuma mau bilang terima kasih — dan satu hal lagi: aku naksir kamu. Soft, tapi konsisten. Kayak bass line yang gak kenceng tapi nahan semua lagu biar gak ambruk.',
+    sign: '— listener setia di playlist lo',
+    ps: 'P.S. next track boleh kita tulis bareng.'
+  },
+  {
+    id: 'polaroid',
+    title: 'Polaroid Heart',
+    artist: 'Developed Late',
+    emoji: '📷',
+    colors: ['#1f1218', '#8a3a5a'],
+    stamp: '💗',
+    from: 'Track 07 · Developed',
+    greeting: 'Halo orang baik,',
+    body: 'Perasaan ini kayak polaroid: awalnya blank, lama-lama keliatan jelas. Dan sekarang fotonya udah keluar — isinya kamu.\n\nAku suka cara lo peduli tanpa ribut. Suka cara lo lucu tanpa maksa. Suka... ya, lo.\n\nIni confess-ku. Gak dibungkus metafora panjang. Aku suka kamu. Point blank.',
+    sign: '— yang simpen foto chat kita di galeri',
+    ps: 'P.S. kalo lo juga ngerasa, balas pake satu kata aja: "dengar".'
+  },
+  {
+    id: 'nightbus',
+    title: 'Last Train Home',
+    artist: 'Late Reply',
+    emoji: '🚆',
+    colors: ['#0e1218', '#2a3a5a'],
+    stamp: '🚂',
+    from: 'Track 08 · Last Call',
+    greeting: 'Sebelum pulang,',
+    body: 'Kereta terakhir hampir lewat, dan aku gak mau nyesel gak bilang.\n\nKamu penting buatku. Lebih dari "temen online". Lebih dari "yang asik diajak ngobrol".\n\nAku pengen ada di hidup lo dengan cara yang lebih jujur. Kalo lo buka pintu dikit aja, aku masuk pelan. Janji gak bawa drama — cuma niat baik dan sedikit deg-degan.',
+    sign: '— penumpang terakhir yang masih nunggu',
+    ps: 'P.S. kalo pintunya nutup, aku hormati. Tapi setidaknya surat ini udah sampe.'
+  }
+];
+
+const gallery = document.getElementById('gallery');
+const stage = document.getElementById('stage');
+const platter = document.getElementById('platter');
+const tonearm = document.getElementById('tonearm');
+const letterBody = document.getElementById('letter-body');
+const letterSign = document.getElementById('letter-sign');
+const letterPs = document.getElementById('letter-ps');
+const btnPlay = document.getElementById('btn-play');
+const btnReplay = document.getElementById('btn-replay');
+const btnBack = document.getElementById('btn-back');
+
+let current = null;
+let typeTimer = null;
+let typing = false;
+
+function artGradient(c) {
+  return `linear-gradient(145deg, ${c[0]} 0%, ${c[1]} 100%)`;
+}
+
+function renderGallery() {
+  gallery.innerHTML = '';
+  CONFESSIONS.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'album';
+    btn.setAttribute('role', 'listitem');
+    btn.dataset.id = c.id;
+    btn.innerHTML = `
+      <div class="album-art" style="background:${artGradient(c.colors)}">
+        <span>${c.emoji}</span>
+      </div>
+      <div class="album-meta">
+        <div class="title">${c.title}</div>
+        <div class="artist">${c.artist}</div>
+        <div class="hint">tap to open</div>
+      </div>
+    `;
+    btn.addEventListener('click', () => openAlbum(c.id));
+    gallery.appendChild(btn);
+  });
+}
+
+function setActiveCard(id) {
+  document.querySelectorAll('.album').forEach(el => {
+    el.classList.toggle('active', el.dataset.id === id);
+  });
+}
+
+function openAlbum(id) {
+  const c = CONFESSIONS.find(x => x.id === id);
+  if (!c) return;
+  current = c;
+  setActiveCard(id);
+
+  document.getElementById('stage-title').textContent = c.title;
+  document.getElementById('stage-sub').textContent = `${c.artist} · ${c.from}`;
+  document.getElementById('vinyl-emoji').textContent = c.emoji;
+  document.getElementById('vinyl-name').textContent = c.title.split(' ')[0].toUpperCase();
+  document.getElementById('vinyl-label').style.background = artGradient(c.colors);
+  document.getElementById('letter-stamp').textContent = c.stamp;
+  document.getElementById('letter-from').textContent = c.from;
+  document.getElementById('letter-greeting').textContent = c.greeting;
+  letterSign.textContent = c.sign;
+  letterPs.textContent = c.ps || '';
+
+  resetLetter();
+  platter.classList.remove('spinning');
+  tonearm.classList.remove('on');
+  btnPlay.hidden = false;
+  btnPlay.textContent = '▶ Play Letter';
+  btnReplay.hidden = true;
+
+  stage.classList.add('show');
+  gallery.style.opacity = '0.35';
+  requestAnimationFrame(() => {
+    stage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  // auto drop arm + spin shortly after open
+  setTimeout(() => {
+    tonearm.classList.add('on');
+    platter.classList.add('spinning');
+  }, 350);
+}
+
+function resetLetter() {
+  if (typeTimer) { clearTimeout(typeTimer); typeTimer = null; }
+  typing = false;
+  letterBody.innerHTML = '<span class="cursor" id="cursor"></span>';
+  letterSign.classList.remove('show');
+  letterPs.classList.remove('show');
+}
+
+function typeLetter() {
+  if (!current || typing) return;
+  resetLetter();
+  typing = true;
+  btnPlay.hidden = true;
+  btnReplay.hidden = true;
+  tonearm.classList.add('on');
+  platter.classList.add('spinning');
+
+  const text = current.body;
+  let i = 0;
+  const cursor = () => document.getElementById('cursor');
+
+  function tick() {
+    if (i >= text.length) {
+      typing = false;
+      const cur = cursor();
+      if (cur) cur.remove();
+      letterSign.classList.add('show');
+      letterPs.classList.add('show');
+      btnReplay.hidden = false;
+      return;
+    }
+    const ch = text[i];
+    const cur = cursor();
+    if (cur) {
+      cur.insertAdjacentText('beforebegin', ch);
+    } else {
+      letterBody.appendChild(document.createTextNode(ch));
+    }
+    i++;
+    let delay = 26;
+    if (ch === '\n') delay = 180;
+    else if ('.!?'.includes(ch)) delay = 220;
+    else if (',;:'.includes(ch)) delay = 90;
+    typeTimer = setTimeout(tick, delay);
+  }
+  tick();
+}
+
+btnPlay.addEventListener('click', typeLetter);
+btnReplay.addEventListener('click', typeLetter);
+btnBack.addEventListener('click', () => {
+  if (typeTimer) { clearTimeout(typeTimer); typeTimer = null; }
+  typing = false;
+  stage.classList.remove('show');
+  gallery.style.opacity = '1';
+  platter.classList.remove('spinning');
+  tonearm.classList.remove('on');
+  setActiveCard(null);
+  current = null;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+renderGallery();
+</script>
+</body>
+</html>
