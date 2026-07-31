@@ -496,6 +496,46 @@
     opacity: 0.035;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
+
+  /* hidden audio iframe for autoplay */
+  .audio-hidden {
+    position: fixed;
+    left: -9999px;
+    top: -9999px;
+    width: 320px;
+    height: 180px;
+    opacity: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  /* now playing badge */
+  .now-playing {
+    display: none;
+    background: var(--card);
+    border: 1px solid rgba(232,180,184,0.2);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    color: var(--accent-soft);
+    gap: 8px;
+    align-items: center;
+    margin-top: 4px;
+  }
+  .now-playing.show { display: inline-flex; }
+  .now-playing .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse-dot 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity: 0.3; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.1); }
+  }
 </style>
 </head>
 <body>
@@ -535,6 +575,13 @@
         <button type="button" class="ctrl" id="btn-replay" hidden>↻ Replay</button>
       </div>
 
+      <div class="now-playing" id="now-playing" aria-live="polite">
+        <span class="dot"></span>
+        <span class="np-title"></span>
+        <span aria-hidden="true">·</span>
+        <span class="np-artist"></span>
+      </div>
+
       <div class="letter-wrap">
         <article class="letter" id="letter">
           <div class="stamp" id="letter-stamp">💌</div>
@@ -551,16 +598,22 @@
   <p class="footer-note">klik album · piringan berputar · surat muncul di bawah</p>
 </div>
 
+<iframe id="yt-audio" class="audio-hidden" allow="autoplay; encrypted-media" frameborder="0"></iframe>
+
 <script>
 const CONFESSIONS = [
   {
     id: 'midnight',
     title: 'Midnight Static',
-    artist: 'Side A',
+    artist: 'Chrisye',
     emoji: '🌙',
     colors: ['#1a1030', '#4a2c6a'],
     stamp: '🌙',
-    from: 'Track 01 · Unsent',
+    from: 'Track 01 · Malam Pertama',
+    songTitle: 'Malam Pertama',
+    songArtist: 'Chrisye',
+    songUrl: 'https://youtu.be/exopVnlS7Bg',
+    artUrl: '',
     greeting: 'Hey kamu,',
     body: 'Aku nulis ini di jam yang biasanya cuma diisi scroll doang. Tapi malam ini kepalaku isinya kamu terus.\n\nBukan drama. Bukan tiba-tiba. Cuma jujur: tiap chat lo bikin hari gw agak lebih tenang. Kayak ada lagu yang pas diputar pas hujan.\n\nAku gak minta jawaban besar. Cuma mau bilang — aku suka kamu. Pelan-pelan, tapi beneran.',
     sign: '— dari seseorang yang masih nahan tombol kirim',
@@ -569,11 +622,15 @@ const CONFESSIONS = [
   {
     id: 'rainy',
     title: 'Rainy Bus Home',
-    artist: 'Untitled Feelings',
+    artist: 'Reza Artamevia',
     emoji: '🌧️',
     colors: ['#0f1f2e', '#2a5a7a'],
     stamp: '☔',
-    from: 'Track 02 · Soft Launch',
+    from: 'Track 02 · Hujan',
+    songTitle: 'Hujan',
+    songArtist: 'Reza Artamevia',
+    songUrl: 'https://youtu.be/G4nNBckyZQU',
+    artUrl: '',
     greeting: 'Kamu,',
     body: 'Gw gak jago ngomong langsung. Jadi ini surat di dalam piringan hitam — biar lo denger pelan-pelan.\n\nLo tau gak, tiap lo ketawa di chat, gw senyum sendiri di bus. Aneh, iya. Tapi jujur.\n\nAku gak nanya "kita apa". Aku cuma mau lo tau: kehadiran lo ngerubah volume hari-hari gw. Dari sepi jadi ada bass-nya.',
     sign: '— penumpang yang selalu cek notif dulu',
@@ -582,11 +639,15 @@ const CONFESSIONS = [
   {
     id: 'slowburn',
     title: 'Slow Burn',
-    artist: 'Almost',
+    artist: 'Dewa 19',
     emoji: '🔥',
     colors: ['#2a1210', '#8a3a2a'],
     stamp: '🔥',
-    from: 'Track 03 · Almost Love',
+    from: 'Track 03 · Kangen',
+    songTitle: 'Kangen',
+    songArtist: 'Dewa 19',
+    songUrl: 'https://youtu.be/sjjhLDPT5_g',
+    artUrl: '',
     greeting: 'Hai,',
     body: 'Ini bukan first sight. Ini slow burn — yang ngebakar dari candaan kecil, reply cepet, dan "hati-hati ya" yang kedengeran biasa tapi ngena.\n\nAku takut rusak yang udah nyaman. Makanya lama diam. Tapi diam juga bikin berat.\n\nJadi ini aku, nerima risiko: aku ngerasa lebih dari temen. Dan kalo lo juga ngerasa sedikit aja... bilang, ya. Pelan juga boleh.',
     sign: '— yang lagi belajar berani',
@@ -595,11 +656,15 @@ const CONFESSIONS = [
   {
     id: 'cassette',
     title: 'Rewind Me',
-    artist: 'Old Frequency',
+    artist: 'Ten2Five',
     emoji: '📼',
     colors: ['#1a1a12', '#5a4a20'],
     stamp: '📼',
-    from: 'Track 04 · Rewind',
+    from: 'Track 04 · Kangen (cover)',
+    songTitle: 'Kangen',
+    songArtist: 'Ten2Five',
+    songUrl: 'https://youtu.be/lnqJLGUHcPk',
+    artUrl: '',
     greeting: 'Teman favoritku,',
     body: 'Kalo hidup bisa di-rewind kayak kaset, aku mau ulang beberapa chat kita. Bukan buat ubah, tapi buat ngerasain lagi detiknya.\n\nAku sadar belakangan: lo udah jadi lagu yang stuck di head. Bukan noise — full album.\n\nConfess-nya simpel: aku sayang sama cara kita. Dan aku pengen ada "kita" yang lebih jelas, kalo lo mau juga.',
     sign: '— yang simpen chat lo di folder rahasia',
@@ -608,11 +673,15 @@ const CONFESSIONS = [
   {
     id: 'golden',
     title: 'Golden Hour Text',
-    artist: 'Unread',
+    artist: 'Chrisye',
     emoji: '🌅',
     colors: ['#2a1a08', '#c47a2a'],
     stamp: '☀️',
-    from: 'Track 05 · Draft',
+    from: 'Track 05 · Senja dan Pagi',
+    songTitle: 'Senja dan Pagi',
+    songArtist: 'Chrisye',
+    songUrl: 'https://youtu.be/5fflyDBXaoo',
+    artUrl: '',
     greeting: 'Kamu yang selalu on time,',
     body: 'Gw nulis ini pas golden hour — cahaya bagus, hati agak berani.\n\nLo bikin hari biasa kerasa spesial tanpa usaha lebay. Cuma "udah makan?" aja udah bikin dada aneh.\n\nAku gak jago romantis. Tapi aku jago jujur: aku suka kamu. Mau coba lebih deket, kalo lo kasih izin.',
     sign: '— yang ngetik-hapus-ngetik lagi',
@@ -621,11 +690,15 @@ const CONFESSIONS = [
   {
     id: 'static',
     title: 'Between Songs',
-    artist: 'Quiet Loud',
+    artist: 'Ten2Five',
     emoji: '🎧',
     colors: ['#12181f', '#3a5a6a'],
     stamp: '🎧',
-    from: 'Track 06 · Interlude',
+    from: 'Track 06 · Gitar',
+    songTitle: 'Gitar',
+    songArtist: 'Ten2Five',
+    songUrl: 'https://youtu.be/X4Abelos_ms',
+    artUrl: '',
     greeting: 'Di jeda lagu,',
     body: 'Ada jeda di antara lagu di mana semuanya sepi sebentar. Di situ biasanya aku mikirin kamu.\n\nBukan karena sepi. Karena kamu yang bikin sepi itu terasa nyaman.\n\nAku cuma mau bilang terima kasih — dan satu hal lagi: aku naksir kamu. Soft, tapi konsisten. Kayak bass line yang gak kenceng tapi nahan semua lagu biar gak ambruk.',
     sign: '— listener setia di playlist lo',
@@ -634,11 +707,15 @@ const CONFESSIONS = [
   {
     id: 'polaroid',
     title: 'Polaroid Heart',
-    artist: 'Developed Late',
+    artist: 'Chrisye',
     emoji: '📷',
     colors: ['#1f1218', '#8a3a5a'],
     stamp: '💗',
-    from: 'Track 07 · Developed',
+    from: 'Track 07 · Kembali Seperti Dulu',
+    songTitle: 'Kembali Seperti Dulu',
+    songArtist: 'Chrisye',
+    songUrl: 'https://youtu.be/JSIpHHnvIAk',
+    artUrl: '',
     greeting: 'Halo orang baik,',
     body: 'Perasaan ini kayak polaroid: awalnya blank, lama-lama keliatan jelas. Dan sekarang fotonya udah keluar — isinya kamu.\n\nAku suka cara lo peduli tanpa ribut. Suka cara lo lucu tanpa maksa. Suka... ya, lo.\n\nIni confess-ku. Gak dibungkus metafora panjang. Aku suka kamu. Point blank.',
     sign: '— yang simpen foto chat kita di galeri',
@@ -647,11 +724,15 @@ const CONFESSIONS = [
   {
     id: 'nightbus',
     title: 'Last Train Home',
-    artist: 'Late Reply',
+    artist: 'Dewa 19',
     emoji: '🚆',
     colors: ['#0e1218', '#2a3a5a'],
     stamp: '🚂',
-    from: 'Track 08 · Last Call',
+    from: 'Track 08 · Pupus',
+    songTitle: 'Pupus',
+    songArtist: 'Dewa 19',
+    songUrl: 'https://youtu.be/VQ-qjEV1m6M',
+    artUrl: '',
     greeting: 'Sebelum pulang,',
     body: 'Kereta terakhir hampir lewat, dan aku gak mau nyesel gak bilang.\n\nKamu penting buatku. Lebih dari "temen online". Lebih dari "yang asik diajak ngobrol".\n\nAku pengen ada di hidup lo dengan cara yang lebih jujur. Kalo lo buka pintu dikit aja, aku masuk pelan. Janji gak bawa drama — cuma niat baik dan sedikit deg-degan.',
     sign: '— penumpang terakhir yang masih nunggu',
@@ -724,6 +805,14 @@ function openAlbum(id) {
   letterSign.textContent = c.sign;
   letterPs.textContent = c.ps || '';
 
+  // now playing badge
+  const np = document.getElementById('now-playing');
+  if (np) {
+    np.querySelector('.np-title').textContent = c.songTitle;
+    np.querySelector('.np-artist').textContent = c.songArtist;
+    np.classList.add('show');
+  }
+
   resetLetter();
   platter.classList.remove('spinning');
   tonearm.classList.remove('on');
@@ -742,6 +831,9 @@ function openAlbum(id) {
     tonearm.classList.add('on');
     platter.classList.add('spinning');
   }, 350);
+
+  // autoplay music
+  playMusic(c.songUrl);
 }
 
 function resetLetter() {
@@ -794,6 +886,25 @@ function typeLetter() {
 
 btnPlay.addEventListener('click', typeLetter);
 btnReplay.addEventListener('click', typeLetter);
+function playMusic(url) {
+  const yt = document.getElementById('yt-audio');
+  if (!yt || !url) return;
+  try {
+    // convert watch URL to embed + autoplay
+    let embedUrl = url;
+    const m = url.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^&?]+)/);
+    if (m) {
+      embedUrl = `https://www.youtube.com/embed/${m[1]}?autoplay=1&loop=1&playlist=${m[1]}&controls=0&modestbranding=1`;
+    }
+    yt.src = embedUrl;
+  } catch (e) { console.warn('playMusic error:', e); }
+}
+
+function stopMusic() {
+  const yt = document.getElementById('yt-audio');
+  if (yt) { try { yt.src = ''; } catch (e) {} }
+}
+
 btnBack.addEventListener('click', () => {
   if (typeTimer) { clearTimeout(typeTimer); typeTimer = null; }
   typing = false;
@@ -803,6 +914,12 @@ btnBack.addEventListener('click', () => {
   tonearm.classList.remove('on');
   setActiveCard(null);
   current = null;
+  
+  // stop music and hide now playing
+  stopMusic();
+  const np = document.getElementById('now-playing');
+  if (np) np.classList.remove('show');
+  
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
