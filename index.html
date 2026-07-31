@@ -801,8 +801,16 @@ function openAlbum(id) {
   document.getElementById('stage-title').textContent = c.title;
   document.getElementById('stage-sub').textContent = `${c.artist} · ${c.from}`;
   document.getElementById('vinyl-emoji').textContent = c.emoji;
-  document.getElementById('vinyl-name').textContent = c.title.split(' ')[0].toUpperCase();
-  document.getElementById('vinyl-label').style.background = artGradient(c.colors);
+  document.getElementById('vinyl-name').textContent = c.songTitle.split(' ')[0].toUpperCase();
+  
+  // vinyl label art - use cover image if available
+  const vinylLabel = document.getElementById('vinyl-label');
+  if (c.artUrl) {
+    vinylLabel.style.background = `url('${c.artUrl}') center/cover`;
+  } else {
+    vinylLabel.style.background = artGradient(c.colors);
+  }
+  
   document.getElementById('letter-stamp').textContent = c.stamp;
   document.getElementById('letter-from').textContent = c.from;
   document.getElementById('letter-greeting').textContent = c.greeting;
