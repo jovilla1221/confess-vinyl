@@ -613,7 +613,7 @@ const CONFESSIONS = [
     songTitle: 'Malam Pertama',
     songArtist: 'Chrisye',
     songUrl: 'https://youtu.be/exopVnlS7Bg',
-    artUrl: '',
+    artUrl: 'images/01-midnight.jpg',
     greeting: 'Hey kamu,',
     body: 'Aku nulis ini di jam yang biasanya cuma diisi scroll doang. Tapi malam ini kepalaku isinya kamu terus.\n\nBukan drama. Bukan tiba-tiba. Cuma jujur: tiap chat lo bikin hari gw agak lebih tenang. Kayak ada lagu yang pas diputar pas hujan.\n\nAku gak minta jawaban besar. Cuma mau bilang — aku suka kamu. Pelan-pelan, tapi beneran.',
     sign: '— dari seseorang yang masih nahan tombol kirim',
@@ -630,7 +630,7 @@ const CONFESSIONS = [
     songTitle: 'Hujan',
     songArtist: 'Utopia',
     songUrl: 'https://youtu.be/G4nNBckyZQU',
-    artUrl: '',
+    artUrl: 'images/02-rainy.jpg',
     greeting: 'Kamu,',
     body: 'Gw gak jago ngomong langsung. Jadi ini surat di dalam piringan hitam — biar lo denger pelan-pelan.\n\nLo tau gak, tiap lo ketawa di chat, gw senyum sendiri di bus. Aneh, iya. Tapi jujur.\n\nAku gak nanya "kita apa". Aku cuma mau lo tau: kehadiran lo ngerubah volume hari-hari gw. Dari sepi jadi ada bass-nya.',
     sign: '— penumpang yang selalu cek notif dulu',
@@ -767,9 +767,13 @@ function renderGallery() {
     btn.className = 'album';
     btn.setAttribute('role', 'listitem');
     btn.dataset.id = c.id;
+    const artBg = c.artUrl
+      ? `background-image:url('${c.artUrl}');background-size:cover;background-position:center;`
+      : `background:${artGradient(c.colors)};`;
+    const artInner = c.artUrl ? '' : `<span>${c.emoji}</span>`;
     btn.innerHTML = `
-      <div class="album-art" style="background:${artGradient(c.colors)}">
-        <span>${c.emoji}</span>
+      <div class="album-art" style="${artBg}">
+        ${artInner}
       </div>
       <div class="album-meta">
         <div class="title">${c.songTitle}</div>
